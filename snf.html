@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dairy Merchant System</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #333;
+            text-align: center;
+        }
+        .product-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .product-table th, .product-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .product-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .highlighted {
+            background-color: #ffffcc;
+        }
+        .quantity-input {
+            width: 60px;
+            padding: 5px;
+            text-align: center;
+        }
+        .category-header {
+            background-color: #4CAF50;
+            color: white;
+            font-weight: bold;
+            padding: 10px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #receipt {
+            display: none;
+            padding: 10px;
+            border: 1px solid #ddd;
+            margin-top: 20px;
+            background-color: white;
+            max-width: 300px;
+            margin-left: auto;
+            margin-right: auto;
+            font-size: 10px;
+        }
+        #receipt h2 {
+            font-size: 14px;
+            margin: 5px 0;
+        }
+        #receipt p {
+            margin: 3px 0;
+            font-size: 10px;
+        }
+        #receipt table {
+            font-size: 10px;
+            width: 100%;
+        }
+        #receipt th, #receipt td {
+            padding: 3px;
+        }
+        #customerTypeModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+        .customer-type-btn {
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 18px;
+            width: 200px;
+        }
+        @media print {
+            .no-print {
+                display: none;
+            }
+            #receipt {
+                display: block !important;
+                width: 100%;
+                max-width: 300px;
+                padding: 0;
+                margin: 0 auto;
+                box-shadow: none;
+                border: none;
+            }
+            body {
+                background-color: white;
+                padding: 0;
+                margin: 0;
+            }
+            .container {
+                box-shadow: none;
+                max-width: 100%;
+                padding: 0;
+                margin: 0;
+            }
+            /* Hide everything except the receipt when printing */
+            .container > *:not(#receipt) {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Customer Type Selection Modal -->
+    <div id="customerTypeModal">
+        <div class="modal-content">
+            <h2>Select Customer Type</h2>
+            <p>Please select the type of customer:</p>
+            <button class="customer-type-btn" id="retailBtn">Retail Customer</button>
+            <button class="customer-type-btn" id="wholesaleBtn">Wholesale Customer</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>Dairy Merchant Order System</h1>
+        <div id="customerTypeDisplay" style="text-align: center; font-size: 18px; margin-bottom: 20px;"></div>
+        
+        <div class="category-header">MILK PRODUCTS</div>
+        <table class="product-table">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Price (₹)</th>
+                    <th>Unit</th>
+                    <th>Quantity</th>
+                    <th>Amount (₹)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Vijaya Gold 500ml</td>
+                    <td class="price" data-retail="37" data-wholesale="35">37</td>
+                    <td>Liters</td>
+                    <td><input type="number" class="quantity-input" data-price="37" min="0"></td>
+                    <td class="amount">0.00</td>
+                </tr>
+                <tr>
+                    <td>STD 500 ml</td>
+                    <td class="price" data-retail="31" data-wholesale="29">31</td>
+                    <td>Liters</td>
+                    <td><input type="number" class="quantity-input" data-price="31" min="0"></td>
+                    <td class="amount">0.00</td>
+                </tr>
+                <tr>
+                    <td>TM 500 ml</td>
+                    <td class="price" data-retail="29" data-wholesale="27">29</td>
+                    <td>Liters</td>
+                    <td><input type="number" class="quantity-input" data-price="29" min="0"></td>
+                    <td class="amount">0.00</td>
+                </tr>
+                <tr>
+                    <td>Tea mate 500ml</td>
+                    <td class="price" data-retail="34" data-wholesale="32">34</td>
+                    <td>Liters</td>
+                    <td><input type="number" class="quantity-input" data-price="34" min="0"></td>
+                    <td class="amount">0.00</td>
+                </tr>
+                <tr>
+                    <td>Dtm160ml</td>
+                    <td class="price" data-retail="10" data-wholesale="9">10</td>
+                    <td>Liters</td>
+                    <td><input type="number" class="quantity-input" data-price="10" min="0"></td>
+                    <td class="amount">0.00</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="category-header">CURD PRODUCTS</div>
+        <table class="product-table">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Price (₹)</th>
+                    <th>Unit</th>
+                    <th>Quantity</th>
+                    <th>Amount (₹)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>TM 10 kgs Curd Buckets</td>
+                    <td class="price" data-retail="720" data-wholesale="700">720</td>
+                    <td>Nos</td>
+                    <td><input type="number" class="quantity-input" data-price="720" min="0"></td>
+                    <td class="amount">0.00</td>
+                </tr>
+                <tr>
+                    <td>TM 5 Kgs Curd Buckets</td>
+                    <td class="price" data-retail="370" data-wholesale="350">370</td>
+                    <td>Nos</td>
+                    <td><input type="number" class="quantity-input" data-price="370" min="0"></td>
+                    <td class="amount">0.00</td>
+                </tr>
+                <tr>
+                    <td>STD 3KG CURD Buckets</td>
+                    <td class="price" data-retail="260" data-wholesale="245">260</td>
+                    <td>Nos</td>
+                    <td><input type="number" class="quantity-input" data-price="260" min="0"></td>
+                    <td class="amount">0.00</td>
+                </tr>
+                <tr>
+                    <td>CURD 900 gms (1kg Bucket)</td>
+                    <td class="price" data-retail="100" data-wholesale="95">100</td>
+                    <td>Nos</td>
+                    <td><input type="number" class="quantity-input" data-price="100" min="0"></td>
+                    <td class="amount">0.00</td>
+                </tr>
+                <tr>
+                    <td>STD 10kgS CURD Buckets</td>
+                    <td class="price" data-retail="760" data-wholesale="730">760</td>
+                    <td>Nos</td>
+                    <td><input type="number" class="quantity-input" data-price="760" min="0"></td>
+                    <td class="amount">0.00</td>
+                </tr>
+                <tr>
+                    <td>MM 5Kgs CURD Buckets</td>
+                    <td class="price" data-retail="450" data-wholesale="430">450</td>
+                    <td>Nos</td>
+                    <td><input type="number" class="quantity-input" data-price="450" min="0"></td>
+                    <td class="amount">0.00</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="category-header">BAKERY PRODUCTS</div>
+        <table class="product-table">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Price (₹)</th>
+                    <th>Unit</th>
+                    <th>Quantity</th>
+                    <th>Amount (₹)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Milk Bread</td>
+                    <td class="price" data-retail="40" data-wholesale="38">40</td>
+                    <td>Nos</td>
+                    <td><input type="number" class="quantity-input" data-price="40" min="0"></td>
+                    <td class="amount">0.00</td>
+                </tr>
+                <tr>
+                    <td>Sweet Bread</td>
+                    <td class="price" data-retail="45" data-wholesale="42">45</td>
+                    <td>Nos</td>
+                    <td><input type="number" class="quantity-input" data-price="45" min="0"></td>
+                    <td class="amount">0.00</td>
+                </tr>
+                <tr>
+                    <td>Wheat Bread</td>
+                    <td class="price" data-retail="42" data-wholesale="40">42</td>
+                    <td>Nos</td>
+                    <td><input type="number" class="quantity-input" data-price="42" min="0"></td>
+                    <td class="amount">0.00</td>
+                </tr>
+                <tr>
+                    <td>Kopa cakes</td>
+                    <td class="price" data-retail="35" data-wholesale="33">35</td>
+                    <td>Nos</td>
+                    <td><input type="number" class="quantity-input" data-price="35" min="0"></td>
+                    <td class="amount">0.00</td>
+                </tr>
+                <tr>
+                    <td>Rusks</td>
+                    <td class="price" data-retail="30" data-wholesale="28">30</td>
+                    <td>Nos</td>
+                    <td><input type="number" class="quantity-input" data-price="30" min="0"></td>
+                    <td class="amount">0.00</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="category-header">GHEE PRODUCTS</div>
+        <table class="product-table">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Price (₹)</th>
+                    <th>Unit</th>
+                    <th>Quantity</th>
+                    <th>Amount (₹)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Ghee 1Liter Packet</td>
+                    <td class="price" data-retail="630" data-wholesale="610">630</td>
+                    <td>Nos</td>
+                    <td><input type="number" class="quantity-input" data-price="630" min="0"></td>
+                    <td class="amount">0.00</td>
+                </tr>
+                <tr>
+                    <td>Ghee 500ml</td>
+                    <td class="price" data-retail="320" data-wholesale="305">320</td>
+                    <td>Nos</td>
+                    <td><input type="number" class="quantity-input" data-price="320" min="0"></td>
+                    <td class="amount">0.00</td>
+                </tr>
+                <tr>
+                    <td>Ghee 200ml</td>
+                    <td class="price" data-retail="150" data-wholesale="140">150</td>
+                    <td>Nos</td>
+                    <td><input type="number" class="quantity-input" data-price="150" min="0"></td>
+                    <td class="amount">0.00</td>
+                </tr>
+                <tr>
+                    <td>Ghee 25ml</td>
+                    <td class="price" data-retail="20" data-wholesale="18">20</td>
+                    <td>Nos</td>
+                    <td><input type="number" class="quantity-input" data-price="20" min="0"></td>
+                    <td class="amount">0.00</td>
+                </tr>
+                <tr>
+                    <td>Ghee 12ml</td>
+                    <td class="price" data-retail="10" data-wholesale="9">10</td>
+                    <td>Nos</td>
+                    <td><input type="number" class="quantity-input" data-price="10" min="0"></td>
+                    <td class="amount">0.00</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="category-header">SPECIALTY ITEMS</div>
+        <table class="product-table">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Price (₹)</th>
+                    <th>Unit</th>
+                    <th>Quantity</th>
+                    <th>Amount (₹)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>PANNER 100Gms</td>
+                    <td class="price" data-retail="50" data-wholesale="47">50</td>
+                    <td>Nos</td>
+                    <td><input type="number" class="quantity-input" data-price="50" min="0"></td>
+                    <td class="amount">0.00</td>
+                </tr>
+                <tr>
+                    <td>Panner 200gms</td>
+                    <td class="price" data-retail="95" data-wholesale="90">95</td>
+                    <td>Nos</td>
+                    <td><input type="number" class="quantity-input" data-price="95" min="0"></td>
+                    <td class="amount">0.00</td>
+                </tr>
+                <tr>
+                    <td>Panner 500 gms</td>
+                    <td class="price" data-retail="220" data-wholesale="210">220</td>
+                    <td>Nos</td>
+                    <td><input type="number" class="quantity-input" data-price="220" min="0"></td>
+                    <td class="amount">0.00</td>
+                </tr>
+                <tr>
+                    <td>Panner 1kg</td>
+                    <td class="price" data-retail="400" data-wholesale="380">400</td>
+                    <td>Nos</td>
+                    <td><input type="number" class="quantity-input" data-price="400" min="0"></td>
+                    <td class="amount">0.00</td>
+                </tr>
+                <tr>
+                    <td>Fresh Cream 1Liter</td>
+                    <td class="price" data-retail="200" data-wholesale="190">200</td>
+                    <td>Nos</td>
+                    <td><input type="number" class="quantity-input" data-price="200" min="0"></td>
+                    <td class="amount">0.00</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="summary-section">
+            <h2>Order Summary</h2>
+            <table class="product-table">
+                <tr>
+                    <th>Total Items</th>
+                    <td id="totalItems">0</td>
+                </tr>
+                <tr>
+                    <th>Total Amount</th>
+                    <td id="totalAmount">₹0.00</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="action-buttons no-print">
+            <button id="printButton">Generate Receipt</button>
+            <button id="clearButton">Clear Form</button>
+            <button id="newCustomerButton">New Customer</button>
+        </div>
+
+        <div id="receipt">
+            <h2>DAIRY PRODUCTS RECEIPT</h2>
+            <p><strong>Date:</strong> <span id="currentDate"></span></p>
+            <p><strong>Customer:</strong> <span id="customerTypeReceipt"></span></p>
+            <table class="product-table" id="receiptTable">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Qty</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody id="receiptBody">
+                    <!-- Will be populated via JavaScript -->
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="2">Total</th>
+                        <th id="receiptTotal">₹0.00</th>
+                    </tr>
+                </tfoot>
+            </table>
+            <div id="footer">
+                <p>Thank you!</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const customerTypeModal = document.getElementById('customerTypeModal');
+            const retailBtn = document.getElementById('retailBtn');
+            const wholesaleBtn = document.getElementById('wholesaleBtn');
+            const customerTypeDisplay = document.getElementById('customerTypeDisplay');
+            const quantityInputs = document.querySelectorAll('.quantity-input');
+            const totalItemsElement = document.getElementById('totalItems');
+            const totalAmountElement = document.getElementById('totalAmount');
+            const printButton = document.getElementById('printButton');
+            const clearButton = document.getElementById('clearButton');
+            const newCustomerButton = document.getElementById('newCustomerButton');
+            const priceElements = document.querySelectorAll('.price');
+            
+            let customerType = '';
+            
+            // Customer type selection
+            retailBtn.addEventListener('click', function() {
+                setCustomerType('Retail');
+            });
+            
+            wholesaleBtn.addEventListener('click', function() {
+                setCustomerType('Wholesale');
+            });
+            
+            // New customer button
+            newCustomerButton.addEventListener('click', function() {
+                resetForNewCustomer();
+            });
+            
+            function resetForNewCustomer() {
+                clearForm();
+                customerTypeModal.style.display = 'flex';
+                customerType = '';
+                customerTypeDisplay.textContent = '';
+            }
+            
+            function setCustomerType(type) {
+                customerType = type;
+                customerTypeDisplay.textContent = `${type} Customer`;
+                document.getElementById('customerTypeReceipt').textContent = type;
+                customerTypeModal.style.display = 'none';
+                
+                // Update prices based on customer type
+                priceElements.forEach(element => {
+                    const dataAttribute = type.toLowerCase();
+                    const price = element.getAttribute(`data-${dataAttribute}`);
+                    element.textContent = price;
+                    
+                    // Find the closest quantity input and update its data-price
+                    const row = element.closest('tr');
+                    const quantityInput = row.querySelector('.quantity-input');
+                    if (quantityInput) {
+                        quantityInput.setAttribute('data-price', price);
+                        // If there's a value in the input, recalculate the amount
+                        if (quantityInput.value) {
+                            updateCalculations();
+                        }
+                    }
+                });
+            }
+            
+            // Function to update calculations
+            function updateCalculations() {
+                let totalItems = 0;
+                let totalAmount = 0;
+                
+                quantityInputs.forEach(input => {
+                    const quantity = parseFloat(input.value) || 0;
+                    const price = parseFloat(input.getAttribute('data-price'));
+                    const amount = quantity * price;
+                    
+                    // Update the amount cell
+                    const row = input.closest('tr');
+                    const amountCell = row.querySelector('.amount');
+                    amountCell.textContent = amount.toFixed(2);
+                    
+                    if (quantity > 0) {
+                        totalItems += quantity;
+                        totalAmount += amount;
+                    }
+                });
+                
+                // Update summary
+                totalItemsElement.textContent = totalItems;
+                totalAmountElement.textContent = '₹' + totalAmount.toFixed(2);
+            }
+            
+            // Add event listeners to quantity inputs
+            quantityInputs.forEach(input => {
+                input.addEventListener('input', updateCalculations);
+            });
+            
+            // Generate receipt
+            printButton.addEventListener('click', function() {
+                const receiptBody = document.getElementById('receiptBody');
+                const receiptTotal = document.getElementById('receiptTotal');
+                const currentDateElement = document.getElementById('currentDate');
+                
+                // Clear previous receipt
+                receiptBody.innerHTML = '';
+                
+                // Add current date
+                const now = new Date();
+                currentDateElement.textContent = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+                
+                let totalAmount = 0;
+                let hasItems = false;
+                
+                // Add only ordered items to receipt
+                quantityInputs.forEach(input => {
+                    const quantity = parseFloat(input.value) || 0;
+                    if (quantity > 0) {
+                        hasItems = true;
+                        const price = parseFloat(input.getAttribute('data-price'));
+                        const amount = quantity * price;
+                        totalAmount += amount;
+                        
+                        const row = input.closest('tr');
+                        const productName = row.querySelector('td:first-child').textContent;
+                        
+                        const receiptRow = document.createElement('tr');
+                        receiptRow.innerHTML = `
+                            <td>${productName}</td>
+                            <td>${quantity}</td>
+                            <td>₹${amount.toFixed(2)}</td>
+                        `;
+                        
+                        receiptBody.appendChild(receiptRow);
+                    }
+                });
+                
+                // Update receipt total
+                receiptTotal.textContent = '₹' + totalAmount.toFixed(2);
+                
+                if (hasItems) {
+                    // Show receipt
+                    document.getElementById('receipt').style.display = 'block';
+                    
+                    // Print
+                    window.print();
+                    
+                    // After printing, show new customer modal
+                    setTimeout(function() {
+                        resetForNewCustomer();
+                    }, 1000);
+                } else {
+                    alert("Please add at least one product to generate a receipt.");
+                }
+            });
+            
+            // Clear form function
+            function clearForm() {
+                quantityInputs.forEach(input => {
+                    input.value = '';
+                });
+                updateCalculations();
+                document.getElementById('receipt').style.display = 'none';
+            }
+            
+            // Clear form button
+            clearButton.addEventListener('click', clearForm);
+        });
+    </script>
+</body>
+</html>
